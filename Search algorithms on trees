@@ -1,0 +1,132 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Tree {
+    char key[100];
+    int count;
+    struct Tree *left;
+    struct Tree *right;
+};
+
+struct DateRecord {
+    char date[20];
+    struct Tree *cars;
+    struct Tree *doctors;
+    struct Tree *diagnoses;
+    struct DateRecord *next;
+};
+
+struct DateRecord *head = NULL;
+
+void search_and_insert(char *x, struct Tree **p) {
+    if (*p == NULL) {
+        *p = (struct Tree*)malloc(sizeof(struct Tree));
+        strcpy((*p)->key, x);
+        (*p)->count = 1;
+        (*p)->left = NULL;
+        (*p)->right = NULL;
+    } else {
+        int cmp = strcmp(x, (*p)->key);
+        if (cmp < 0)
+            search_and_insert(x, &((*p)->left));
+        else if (cmp > 0)
+            search_and_insert(x, &((*p)->right));
+        else
+            (*p)->count++;
+    }
+}
+
+int get_count(char *x, struct Tree *p) {
+    while (p != NULL) {
+        int cmp = strcmp(x, p->key);
+        if (cmp == 0)
+            return p->count;
+        if (cmp < 0)
+            p = p->left;
+        else
+            p = p->right;
+    }
+    return 0;
+}
+
+struct DateRecord* get_or_create_date(char *date) {
+    struct DateRecord *curr = head;
+    while (curr != NULL) {
+        if (strcmp(curr->date, date) == 0)
+            return curr;
+        curr = curr->next;
+    }
+    struct DateRecord *new_record = (struct DateRecord*)malloc(sizeof(struct DateRecord));
+    strcpy(new_record->date, date);
+    new_record->cars = NULL;
+    new_record->doctors = NULL;
+    new_record->diagnoses = NULL;
+    new_record->next = head;
+    head = new_record;
+    return new_record;
+}
+
+int main() {
+    int choice;
+    char date[20], temp_str[100];
+
+    do {
+        printf("\n1. Зареєструвати виїзд\n2. Статистика\n0. Вихід\nВибір: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: {
+                printf("Дата (ДД.ММ.РРРР): ");
+                scanf("%s", date);
+                struct DateRecord *rec = get_or_create_date(date);
+                
+                printf("Номер машини: ");
+                scanf("%s", temp_str);
+                search_and_insert(temp_str, &(rec->cars));
+                
+                printf("Прізвище лікаря: ");
+                scanf("%s", temp_str);
+                search_and_insert(temp_str, &(rec->doctors));
+                
+                printf("Діагноз: ");
+                scanf("%s", temp_str);
+                search_and_insert(temp_str, &(rec->diagnoses));
+                
+                printf("Запис успішно додано.\n");
+                break;
+            }
+            case 2: {
+                printf("Введіть дату: ");
+                scanf("%s", date);
+                struct DateRecord *rec = head;
+                while (rec != NULL && strcmp(rec->date, date) != 0)
+                    rec = rec->next;
+                
+                if (rec == NULL) {
+                    printf("Немає записів.\n");
+                } else {
+                    int sub_choice;
+                    printf(" 1.Машини 2.Лікарі 3.Діагнози\n Вибір: ");
+                    scanf("%d", &sub_choice);
+                    
+                    printf("Шукане слово: ");
+                    scanf("%s", temp_str);
+                    
+                    int count = 0;
+                    if (sub_choice == 1)
+                        count = get_count(temp_str, rec->cars);
+                    else if (sub_choice == 2)
+                        count = get_count(temp_str, rec->doctors);
+                    else if (sub_choice == 3)
+                        count = get_count(temp_str, rec->diagnoses);
+                    
+                    printf("Результат: %d виїзд(ів).\n", count);
+                }
+                break;
+            }
+        }
+    } while (choice != 0);
+
+    return 0;
+}
