@@ -1,0 +1,140 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int m = 5;
+int elements_count = 0;
+
+struct segment {
+    char first_name[50];
+    char last_name[50];
+    float score;
+    struct segment *next;
+};
+
+struct segment **A;
+
+void MakeNull() {
+    A = (struct segment**)malloc(m * sizeof(struct segment*));
+    for (int i = 0; i < m; i++)
+        A[i] = NULL;
+}
+
+int h(char *last_name, char *first_name) {
+    int sum = 0;
+    for (int i = 0; i < strlen(last_name); i++)
+        sum += last_name[i];
+    for (int i = 0; i < strlen(first_name); i++)
+        sum += first_name[i];
+    return sum % m;
+}
+
+void ins_or_update(char *last_name, char *first_name, float score) {
+    int i = h(last_name, first_name);
+    struct segment *q = A[i];
+    struct segment *prev = NULL;
+
+    while (q != NULL) {
+        if (strcmp(q->last_name, last_name) == 0 && strcmp(q->first_name, first_name) == 0) {
+            q->score = score;
+            return;
+        }
+        prev = q;
+        q = q->next;
+    }
+
+    struct segment *t = (struct segment*)malloc(sizeof(struct segment));
+    strcpy(t->last_name, last_name);
+    strcpy(t->first_name, first_name);
+    t->score = score;
+    t->next = NULL;
+
+    if (prev == NULL)
+        A[i] = t;
+    else
+        prev->next = t;
+    
+    elements_count++;
+}
+
+void find_score(char *last_name, char *first_name) {
+    int i = h(last_name, first_name);
+    struct segment *q = A[i];
+    while (q != NULL) {
+        if (strcmp(q->last_name, last_name) == 0 && strcmp(q->first_name, first_name) == 0) {
+            printf("Середній бал студента %s %s: %.2f\n", last_name, first_name, q->score);
+            return;
+        }
+        q = q->next;
+    }
+    printf("Студента не знайдено.\n");
+}
+
+void print_table() {
+    for (int i = 0; i < m; i++) {
+        printf("%d: ", i);
+        struct segment *q = A[i];
+        while (q != NULL) {
+            printf("[%s %s, %.2f] -> ", q->last_name, q->first_name, q->score);
+            q = q->next;
+        }
+        printf("NULL\n");
+    }
+}
+
+void restruct() {
+    int old_m = m;
+    struct segment **old_A = A;
+    
+    m = old_m * 2;
+    MakeNull();
+    elements_count = 0;
+
+    for (int i = 0; i < old_m; i++) {
+        struct segment *q = old_A[i];
+        while (q != NULL) {
+            ins_or_update(q->last_name, q->first_name, q->score);
+            struct segment *temp = q;
+            q = q->next;
+            free(temp);
+        }
+    }
+    free(old_A);
+    printf("Реструктуризацію виконано. Нова кількість сегментів: %d\n", m);
+}
+
+int main() {
+    MakeNull();
+    int choice;
+    char fname[50], lname[50];
+    float score;
+
+    do {
+        printf("\n1. Додати/Оновити\n2. Знайти\n3. Вивести таблицю\n4. Реструктуризація\n0. Вихід\nВибір: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                printf("Прізвище та Ім'я: ");
+                scanf("%s %s", lname, fname);
+                printf("Середній бал: ");
+                scanf("%f", &score);
+                ins_or_update(lname, fname, score);
+                if (elements_count >= 2 * m)
+                    restruct();
+                break;
+            case 2:
+                printf("Прізвище та Ім'я для пошуку: ");
+                scanf("%s %s", lname, fname);
+                find_score(lname, fname);
+                break;
+            case 3:
+                print_table();
+                break;
+            case 4:
+                restruct();
+                break;
+        }
+    } while (choice != 0);
+    return 0;
+}
